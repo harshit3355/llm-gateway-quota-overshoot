@@ -1,0 +1,13 @@
+# LiteLLM defaults (proxy_batch_write_at = 10s).
+model_list:
+  - model_name: gpt-test
+    litellm_params:
+      model: openai/gpt-test
+      api_base: http://mock:8080/v1
+      api_key: not-used
+      input_cost_per_token: 0
+      output_cost_per_token: 0.00001
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL

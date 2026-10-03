@@ -1,0 +1,35 @@
+# Local, disposable stack. Credentials below are throwaway values for these containers only.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: llm
+      POSTGRES_PASSWORD: llm
+      POSTGRES_DB: litellm
+    tmpfs: ["/var/lib/postgresql/data"]  # throwaway DB; avoids slow-disk init timeouts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U llm -d litellm"]
+      interval: 2s
+      retries: 90
+      start_period: 60s
+  redis:
+    image: redis:7-alpine
+  mock:
+    image: python:3.12-slim
+    command: ["python", "/mock/server.py"]
+    volumes: ["./mock:/mock:ro"]
+    ports: ["127.0.0.1:8080:8080"]
+  litellm:
+    image: ghcr.io/berriai/litellm:v1.103.2
+    command: ["--config", "/config.yaml", "--port", "4000"]
+    volumes: ["./configs/${CONFIG:-default}.yaml:/config.yaml:ro"]
+    environment:
+      DATABASE_URL: postgresql://llm:llm@db:5432/litellm
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      LITELLM_MASTER_KEY: sk-local-only
+    ports: ["127.0.0.1:4000:4000"]
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_started}
+      mock: {condition: service_started}
